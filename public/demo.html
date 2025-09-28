@@ -376,42 +376,61 @@ export default {
     </main>
 
     <script>
+        // Проверяем, загружена ли клиентская библиотека
+        function checkClientLoaded() {
+            if (typeof window.berestaID !== 'undefined' && window.berestaID.register) {
+                console.log('Client library is loaded and ready');
+                document.getElementById('client-status').innerHTML = 
+                    '<div class="alert alert-success">✅ Клиентская библиотека Beresta ID успешно загружена!</div>';
+                initDemo();
+                return true;
+            } else {
+                console.log('Client library not yet loaded, waiting...');
+                document.getElementById('client-status').innerHTML = 
+                    '<div class="alert alert-info">⏳ Загрузка клиентской библиотеки...</div>';
+                return false;
+            }
+        }
+
         // Табы
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
-                // Убираем активный класс у всех табов и контента
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                // Добавляем активный класс текущему табу и контенту
+            
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab).classList.add('active');
             });
         });
 
-        // Автоматическое определение URL
-        document.getElementById('client-url').textContent = window.location.origin + '/client.js';
+        // Глобальные функции для работы с аккаунтами
+        window.selectAccount = function(email) {
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-password').focus();
+        }
 
-        // Загрузка клиентской библиотеки
-        function loadClientLibrary() {
-            const script = document.createElement('script');
-            script.src = '/client.js';
-            script.onload = () => {
-                document.getElementById('client-status').innerHTML = 
-                    '<div class="alert alert-success">Клиентская библиотека успешно загружена!</div>';
-                initDemo();
-            };
-            script.onerror = () => {
-                document.getElementById('client-status').innerHTML = 
-                    '<div class="alert alert-error">Ошибка загрузки клиентской библиотеки</div>';
-            };
-            document.head.appendChild(script);
+        window.removeAccount = function(email, event) {
+            if (event) event.stopPropagation();
+            if (window.berestaID) {
+                window.berestaID.removeSavedAccount(email);
+                updateSavedAccounts();
+            }
         }
 
         // Инициализация демо
         function initDemo() {
-            const client = window.brestID;
-            
+            const client = window.berestaID;
+            console.log('Initializing demo with client:', client);
+        
+            if (!client || typeof client.register !== 'function') {
+                document.getElementById('client-status').innerHTML = 
+                    '<div class="alert alert-error">❌ Клиентская библиотека не инициализирована правильно. Обновите страницу.</div>';
+                return;
+            }
+        
+            // Показ сохраненных аккаунтов
+            updateSavedAccounts();
+        
             // Форма регистрации
             document.getElementById('register-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -420,12 +439,31 @@ export default {
                 const name = document.getElementById('reg-name').value;
 
                 try {
+                    console.log('Attempting registration for:', email);
                     const result = await client.register(email, password, name || null);
                     document.getElementById('register-result').innerHTML = 
-                        `<div class="alert alert-success">Успешно! Пользователь создан: ${result.user.email}</div>`;
+                        `<div class="alert alert-success">✅ Аккаунт успешно создан!<br>Email: ${result.user.email}<br>ID: ${result.user.id}</div>`;
+                
+                    // Очистка формы
+                    document.getElementById('register-form').reset();
+                
+                    // Автоматический вход после регистрации
+                    setTimeout(async () => {
+                        try {
+                            const loginResult = await client.login(email, password);
+                            document.getElementById('login-result').innerHTML = 
+                                `<div class="alert alert-success">✅ Автоматический вход выполнен! Добро пожаловать, ${loginResult.user.name || loginResult.user.email}</div>`;
+                            updateUI();
+                            updateSavedAccounts();
+                        } catch (loginError) {
+                            console.error('Auto-login error:', loginError);
+                        }
+                    }, 1000);
+                
                 } catch (error) {
+                    console.error('Registration failed:', error);
                     document.getElementById('register-result').innerHTML = 
-                        `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
+                        `<div class="alert alert-error">❌ Ошибка: ${error.message}</div>`;
                 }
             });
 
@@ -436,98 +474,156 @@ export default {
                 const password = document.getElementById('login-password').value;
 
                 try {
+                    console.log('Attempting login for:', email);
                     const result = await client.login(email, password);
                     document.getElementById('login-result').innerHTML = 
-                        `<div class="alert alert-success">Успешный вход! Добро пожаловать, ${result.user.email}</div>`;
-                    updateStatus();
-                    enableProfileButtons();
+                        `<div class="alert alert-success">✅ Успешный вход!<br>Добро пожаловать, ${result.user.name || result.user.email}</div>`;
+                
+                    // Очистка формы
+                    document.getElementById('login-form').reset();
+                
+                    updateUI();
+                    updateSavedAccounts();
+                
                 } catch (error) {
+                    console.error('Login failed:', error);
                     document.getElementById('login-result').innerHTML = 
-                        `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
+                        `<div class="alert alert-error">❌ Ошибка: ${error.message}</div>`;
                 }
             });
 
-            // Кнопки управления профилем
+            // Кнопка ручного входа
+            document.getElementById('manual-login-btn').addEventListener('click', () => {
+                document.getElementById('saved-accounts-section').style.display = 'none';
+            });
+
+            // Управление профилем
             document.getElementById('get-profile').addEventListener('click', async () => {
                 try {
                     const profile = await client.getProfile();
                     document.getElementById('profile-result').innerHTML = 
-                        `<div class="alert alert-success">Профиль: ${JSON.stringify(profile, null, 2)}</div>`;
+                        `<div class="alert alert-success">✅ Профиль получен:<br><pre>${JSON.stringify(profile, null, 2)}</pre></div>`;
                 } catch (error) {
                     document.getElementById('profile-result').innerHTML = 
-                        `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
+                        `<div class="alert alert-error">❌ Ошибка: ${error.message}</div>`;
                 }
             });
-
-            document.getElementById('update-profile').addEventListener('click', async () => {
-                const newName = prompt('Введите новое имя:');
-                if (newName) {
-                    try {
-                        const result = await client.updateProfile(newName);
-                        document.getElementById('profile-result').innerHTML = 
-                            `<div class="alert alert-success">Профиль обновлен: ${JSON.stringify(result, null, 2)}</div>`;
-                        updateStatus();
-                    } catch (error) {
-                        document.getElementById('profile-result').innerHTML = 
-                            `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
-                    }
-                }
-            });
-
+    
             document.getElementById('verify-token').addEventListener('click', async () => {
                 try {
                     const verified = await client.verifyToken();
                     document.getElementById('profile-result').innerHTML = 
-                        `<div class="alert alert-success">Токен действителен: ${JSON.stringify(verified, null, 2)}</div>`;
+                        `<div class="alert alert-success">✅ Токен действителен:<br><pre>${JSON.stringify(verified, null, 2)}</pre></div>`;
                 } catch (error) {
                     document.getElementById('profile-result').innerHTML = 
-                        `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
+                        `<div class="alert alert-error">❌ Ошибка: ${error.message}</div>`;
+                }
+            });
+
+            document.getElementById('update-profile-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newName = document.getElementById('update-name').value;
+            
+                try {
+                    const result = await client.updateProfile(newName);
+                    document.getElementById('profile-result').innerHTML = 
+                        `<div class="alert alert-success">✅ Профиль обновлен!<br>Новое имя: ${result.user.name}</div>`;
+                    document.getElementById('update-profile-form').reset();
+                    updateUI();
+                } catch (error) {
+                    document.getElementById('profile-result').innerHTML = 
+                        `<div class="alert alert-error">❌ Ошибка: ${error.message}</div>`;
                 }
             });
 
             document.getElementById('logout').addEventListener('click', async () => {
                 await client.logout();
                 document.getElementById('profile-result').innerHTML = 
-                    `<div class="alert alert-success">Вы вышли из системы</div>`;
-                updateStatus();
-                disableProfileButtons();
+                    `<div class="alert alert-success">✅ Вы успешно вышли из системы</div>`;
+                updateUI();
+                updateSavedAccounts();
             });
 
-            // Обновление статуса
-            function updateStatus() {
+            // Обновление интерфейса
+            function updateUI() {
                 const isAuth = client.isAuthenticated();
                 const user = client.getUser();
+            
+                if (isAuth && user) {
+                    document.getElementById('profile-not-auth').style.display = 'none';
+                    document.getElementById('profile-auth').style.display = 'block';
+                    document.getElementById('current-user-email').textContent = user.email;
+                    document.getElementById('current-user-name').textContent = user.name || 'Не указано';
+                } else {
+                    document.getElementById('profile-not-auth').style.display = 'block';
+                    document.getElementById('profile-auth').style.display = 'none';
+                }
+            }
+
+            // Обновление списка сохраненных аккаунтов
+            function updateSavedAccounts() {
+                const savedAccounts = client.getSavedAccountsList();
+                const savedAccountsSection = document.getElementById('saved-accounts-section');
+                const savedAccountsList = document.getElementById('saved-accounts-list');
+            
+                if (savedAccounts && savedAccounts.length > 0) {
+                    savedAccountsSection.style.display = 'block';
+                    savedAccountsList.innerHTML = '';
                 
-                document.getElementById('auth-status').textContent = isAuth ? 'Аутентифицирован' : 'Не аутентифицирован';
-                document.getElementById('user-info').textContent = user ? user.email : 'Неизвестен';
-                document.getElementById('token-info').textContent = client.getToken() ? 'Присутствует' : 'Отсутствует';
-            }
-
-            function enableProfileButtons() {
-                document.getElementById('get-profile').disabled = false;
-                document.getElementById('update-profile').disabled = false;
-                document.getElementById('verify-token').disabled = false;
-                document.getElementById('logout').disabled = false;
-            }
-
-            function disableProfileButtons() {
-                document.getElementById('get-profile').disabled = true;
-                document.getElementById('update-profile').disabled = true;
-                document.getElementById('verify-token').disabled = true;
-                document.getElementById('logout').disabled = true;
+                    savedAccounts.forEach(account => {
+                        const accountDiv = document.createElement('div');
+                        accountDiv.style.padding = '10px';
+                        accountDiv.style.border = '1px solid var(--border)';
+                        accountDiv.style.margin = '5px 0';
+                        accountDiv.style.borderRadius = '4px';
+                        accountDiv.style.cursor = 'pointer';
+                        accountDiv.style.display = 'flex';
+                        accountDiv.style.justifyContent = 'space-between';
+                        accountDiv.style.alignItems = 'center';
+                        accountDiv.innerHTML = `
+                            <div>
+                                <strong>${account.name || account.email}</strong><br>
+                                <small>${account.email}</small>
+                            </div>
+                            <button onclick="removeAccount('${account.email}', event)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
+                        `;
+                        accountDiv.onclick = () => selectAccount(account.email);
+                        savedAccountsList.appendChild(accountDiv);
+                    });
+                } else {
+                    savedAccountsSection.style.display = 'none';
+                }
             }
 
             // Инициализация статуса
             client.init().then(() => {
-                updateStatus();
-                if (client.isAuthenticated()) {
-                    enableProfileButtons();
-                }
+                updateUI();
+            }).catch(error => {
+                console.warn('Client init error:', error);
             });
         }
 
-        // Загружаем клиентскую библиотеку при загрузке страницы
-        loadClientLibrary();
+        // Проверяем загрузку библиотеки
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем сразу
+             if (!checkClientLoaded()) {
+                // Если не загружена, проверяем каждую секунду
+                const checkInterval = setInterval(() => {
+                    if (checkClientLoaded()) {
+                        clearInterval(checkInterval);
+                    }
+                }, 1000);
+
+                // Останавливаем проверку через 10 секунд
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    if (typeof window.berestaID === 'undefined') {
+                        document.getElementById('client-status').innerHTML = 
+                            '<div class="alert alert-error">❌ Не удалось загрузить клиентскую библиотеку. Проверьте консоль браузера для подробностей.</div>';
+                    }
+                }, 10000);
+            }
+        });
     </script>
 </body>
 </html>
