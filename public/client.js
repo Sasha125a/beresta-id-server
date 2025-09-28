@@ -313,6 +313,303 @@ class BerestaIDClient {
     }
 }
 
+// Добавьте эти методы в класс BerestaIDClient в public/client.js
+
+/**
+ * Функция для входа через Beresta ID из внешних приложений
+ * @param {Object} options - Опции входа
+ * @param {string} options.appName - Название приложения
+ * @param {string} options.redirectUrl - URL для редиректа после успешного входа
+ * @param {string} options.containerId - ID контейнера для отображения интерфейса входа
+ * @param {Function} options.onSuccess - Колбэк при успешном входе
+ * @param {Function} options.onError - Колбэк при ошибке
+ */
+async function loginWithBerestaID(options = {}) {
+    const {
+        appName = 'Приложение',
+        redirectUrl = window.location.href,
+        containerId = 'beresta-login-container',
+        onSuccess = null,
+        onError = null
+    } = options;
+
+    // Создаем контейнер для интерфейса входа
+    createLoginContainer(containerId, appName);
+
+    try {
+        // Проверяем, есть ли сохраненные аккаунты
+        if (this.hasSavedAccounts()) {
+            showSavedAccounts(containerId);
+        } else {
+            showLoginForm(containerId);
+        }
+
+        // Ожидаем выбора аккаунта или входа
+        const userData = await waitForLogin(containerId);
+        
+        if (onSuccess) {
+            onSuccess(userData);
+        }
+        
+        if (redirectUrl) {
+            window.location.href = redirectUrl;
+        }
+
+        return userData;
+
+    } catch (error) {
+        console.error('Login with Beresta ID failed:', error);
+        if (onError) {
+            onError(error);
+        }
+        throw error;
+    }
+}
+
+/**
+ * Создает контейнер для интерфейса входа
+ */
+function createLoginContainer(containerId, appName) {
+    let container = document.getElementById(containerId);
+    
+    if (!container) {
+        container = document.createElement('div');
+        container.id = containerId;
+        container.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        `;
+        document.body.appendChild(container);
+    }
+
+    container.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0 0 0.5rem 0; color: #2563eb;">Вход через Beresta ID</h2>
+                <p style="margin: 0; color: #64748b;">для ${appName}</p>
+            </div>
+            <div id="${containerId}-content"></div>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button onclick="closeBerestaLogin('${containerId}')" style="background: none; border: none; color: #64748b; cursor: pointer; text-decoration: underline;">
+                    Отмена
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Показывает список сохраненных аккаунтов
+ */
+function showSavedAccounts(containerId) {
+    const content = document.getElementById(`${containerId}-content`);
+    const savedAccounts = this.getSavedAccountsList();
+    
+    content.innerHTML = `
+        <div style="margin-bottom: 1rem;">
+            <h4 style="margin: 0 0 1rem 0; color: #374151;">Выберите аккаунт:</h4>
+            <div id="${containerId}-accounts-list" style="max-height: 200px; overflow-y: auto;"></div>
+        </div>
+        <button onclick="showManualLogin('${containerId}')" style="width: 100%; padding: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; color: #64748b;">
+            Войти другим аккаунтом
+        </button>
+    `;
+
+    const accountsList = document.getElementById(`${containerId}-accounts-list`);
+    
+    savedAccounts.forEach(account => {
+        const accountDiv = document.createElement('div');
+        accountDiv.style.cssText = `
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        `;
+        accountDiv.onmouseenter = () => accountDiv.style.backgroundColor = '#f8fafc';
+        accountDiv.onmouseleave = () => accountDiv.style.backgroundColor = 'white';
+        
+        accountDiv.innerHTML = `
+            <div>
+                <div style="font-weight: 600; color: #1e293b;">${account.name || account.email}</div>
+                <div style="font-size: 0.875rem; color: #64748b;">${account.email}</div>
+            </div>
+            <button onclick="event.stopPropagation(); removeAccountFromList('${account.email}', '${containerId}')" 
+                    style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #ef4444; padding: 0.25rem;">
+                ×
+            </button>
+        `;
+        accountDiv.onclick = () => this.selectAccountForLogin(account.email, containerId);
+        accountsList.appendChild(accountDiv);
+    });
+}
+
+/**
+ * Показывает форму ручного входа
+ */
+function showManualLogin(containerId) {
+    const content = document.getElementById(`${containerId}-content`);
+    
+    content.innerHTML = `
+        <form id="${containerId}-login-form" onsubmit="return false;">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Email</label>
+                <input type="email" id="${containerId}-email" required 
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;"
+                       placeholder="your@email.com">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Пароль</label>
+                <input type="password" id="${containerId}-password" required 
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;"
+                       placeholder="Ваш пароль">
+            </div>
+            <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" id="${containerId}-remember" checked style="margin: 0;">
+                <label for="${containerId}-remember" style="margin: 0; color: #64748b;">Запомнить аккаунт</label>
+            </div>
+            <button type="submit" 
+                    style="width: 100%; padding: 0.75rem; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                Войти
+            </button>
+        </form>
+        ${this.hasSavedAccounts() ? `
+        <div style="text-align: center; margin-top: 1rem;">
+            <button onclick="showSavedAccounts('${containerId}')" style="background: none; border: none; color: #64748b; cursor: pointer; text-decoration: underline;">
+                ← Выбрать из сохраненных аккаунтов
+            </button>
+        </div>
+        ` : ''}
+    `;
+
+    const form = document.getElementById(`${containerId}-login-form`);
+    form.onsubmit = () => this.handleManualLogin(containerId);
+}
+
+/**
+ * Обрабатывает ручной вход
+ */
+async function handleManualLogin(containerId) {
+    const email = document.getElementById(`${containerId}-email`).value;
+    const password = document.getElementById(`${containerId}-password`).value;
+    
+    try {
+        const result = await this.login(email, password);
+        this.resolveLoginPromise(result);
+    } catch (error) {
+        this.showLoginError(containerId, error.message);
+    }
+}
+
+/**
+ * Выбор аккаунта из списка
+ */
+async function selectAccountForLogin(email, containerId) {
+    const content = document.getElementById(`${containerId}-content`);
+    content.innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+            <div style="margin-bottom: 1rem;">Выбран: <strong>${email}</strong></div>
+            <div>Введите пароль для входа</div>
+            <form id="${containerId}-password-form" onsubmit="return false;" style="margin-top: 1rem;">
+                <input type="password" id="${containerId}-account-password" required 
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; margin-bottom: 1rem;"
+                       placeholder="Пароль для ${email}">
+                <button type="submit" 
+                        style="width: 100%; padding: 0.75rem; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                    Войти
+                </button>
+            </form>
+        </div>
+    `;
+
+    const form = document.getElementById(`${containerId}-password-form`);
+    form.onsubmit = async () => {
+        const password = document.getElementById(`${containerId}-account-password`).value;
+        try {
+            const result = await this.login(email, password);
+            this.resolveLoginPromise(result);
+        } catch (error) {
+            this.showLoginError(containerId, error.message);
+        }
+    };
+}
+
+// Добавьте эти методы в класс BerestaIDClient
+BerestaIDClient.prototype.loginWithBerestaID = loginWithBerestaID;
+BerestaIDClient.prototype.createLoginContainer = createLoginContainer;
+BerestaIDClient.prototype.showSavedAccounts = showSavedAccounts;
+BerestaIDClient.prototype.showManualLogin = showManualLogin;
+BerestaIDClient.prototype.handleManualLogin = handleManualLogin;
+BerestaIDClient.prototype.selectAccountForLogin = selectAccountForLogin;
+
+// Глобальные функции для обработки событий
+window.closeBerestaLogin = function(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.remove();
+    }
+    if (window.berestaID && window.berestaID.rejectLoginPromise) {
+        window.berestaID.rejectLoginPromise(new Error('Вход отменен'));
+    }
+};
+
+window.showManualLogin = function(containerId) {
+    if (window.berestaID) {
+        window.berestaID.showManualLogin(containerId);
+    }
+};
+
+window.removeAccountFromList = function(email, containerId) {
+    if (window.berestaID) {
+        window.berestaID.removeSavedAccount(email);
+        window.berestaID.showSavedAccounts(containerId);
+    }
+};
+
+// Система промисов для ожидания входа
+BerestaIDClient.prototype.waitForLogin = function(containerId) {
+    return new Promise((resolve, reject) => {
+        this.resolveLoginPromise = resolve;
+        this.rejectLoginPromise = reject;
+    });
+};
+
+BerestaIDClient.prototype.showLoginError = function(containerId, message) {
+    const content = document.getElementById(`${containerId}-content`);
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+    `;
+    errorDiv.textContent = message;
+    content.insertBefore(errorDiv, content.firstChild);
+    
+    // Автоматически скрываем ошибку через 5 секунд
+    setTimeout(() => {
+        if (errorDiv.parentNode) {
+            errorDiv.remove();
+        }
+    }, 5000);
+};
+
 // Создаем глобальный экземпляр
 if (typeof window !== 'undefined') {
     window.berestaID = new BerestaIDClient();
