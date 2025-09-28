@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Демо - Beresta ID</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav container">
+            <a href="/" class="logo">Beresta ID</a>
+            <ul class="nav-links">
+                <li><a href="/">Главная</a></li>
+                <li><a href="/demo" style="color: var(--primary);">Демо</a></li>
+                <li><a href="/docs">Документация</a></li>
+                <li><a href="/admin">Админ-панель</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container" style="padding: 2rem 0;">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Демонстрация Beresta ID</h1>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="client">Клиентская библиотека</button>
+            <button class="tab" data-tab="api">Прямые API вызовы</button>
+            <button class="tab" data-tab="examples">Примеры кода</button>
+        </div>
+
+        <!-- Клиентская библиотека -->
+        <div id="client" class="tab-content active">
+            <div class="card">
+                <h3>Автоматическая клиентская библиотека</h3>
+                <p>Подключите один скрипт и получите готовый объект для работы с аутентификацией.</p>
+                
+                <div class="code-block" style="margin: 1rem 0;">
+&lt;script src="<span id="client-url">/client.js</span>"&gt;&lt;/script&gt;
+                </div>
+
+                <div id="client-status" style="margin: 1rem 0;">
+                    <div class="alert alert-error">Клиентская библиотека не загружена</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                    <!-- Регистрация -->
+                    <div class="form-container" style="margin: 0;">
+                        <h4>Регистрация</h4>
+                        <form id="register-form">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="reg-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Пароль</label>
+                                <input type="password" id="reg-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Имя (опционально)</label>
+                                <input type="text" id="reg-name">
+                            </div>
+                            <button type="submit" class="btn">Зарегистрироваться</button>
+                        </form>
+                        <div id="register-result" style="margin-top: 1rem;"></div>
+                    </div>
+
+                    <!-- Вход -->
+                    <div class="form-container" style="margin: 0;">
+                        <h4>Вход</h4>
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="login-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Пароль</label>
+                                <input type="password" id="login-password" required>
+                            </div>
+                            <button type="submit" class="btn">Войти</button>
+                        </form>
+                        <div id="login-result" style="margin-top: 1rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Управление профилем -->
+                <div style="margin-top: 2rem;">
+                    <h4>Управление профилем</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <button id="get-profile" class="btn" disabled>Получить профиль</button>
+                        <button id="update-profile" class="btn" disabled>Обновить имя</button>
+                        <button id="verify-token" class="btn" disabled>Проверить токен</button>
+                        <button id="logout" class="btn btn-secondary" disabled>Выйти</button>
+                    </div>
+                    <div id="profile-result" style="margin-top: 1rem;"></div>
+                </div>
+
+                <!-- Статус -->
+                <div style="margin-top: 2rem; padding: 1rem; background: var(--background); border-radius: 8px;">
+                    <h4>Текущий статус</h4>
+                    <div id="status-info">
+                        <p>Аутентификация: <span id="auth-status">Не аутентифицирован</span></p>
+                        <p>Пользователь: <span id="user-info">Неизвестен</span></p>
+                        <p>Токен: <span id="token-info">Отсутствует</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Прямые API вызовы -->
+        <div id="api" class="tab-content">
+            <div class="card">
+                <h3>Прямые API вызовы</h3>
+                <p>Используйте REST API напрямую через fetch или axios.</p>
+
+                <div style="margin: 2rem 0;">
+                    <h4>Регистрация пользователя</h4>
+                    <div class="code-block">
+// JavaScript
+const response = await fetch('/auth/register', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        email: 'user@example.com',
+        password: 'password123',
+        name: 'User Name'
+    })
+});
+
+const result = await response.json();
+                    </div>
+                </div>
+
+                <div style="margin: 2rem 0;">
+                    <h4>Вход в систему</h4>
+                    <div class="code-block">
+// JavaScript
+const response = await fetch('/auth/login', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        email: 'user@example.com',
+        password: 'password123'
+    })
+});
+
+const { token, user } = await response.json();
+
+// Сохраняем токен для последующих запросов
+localStorage.setItem('token', token);
+                    </div>
+                </div>
+
+                <div style="margin: 2rem 0;">
+                    <h4>Защищенные запросы</h4>
+                    <div class="code-block">
+// JavaScript
+const token = localStorage.getItem('token');
+
+const response = await fetch('/api/profile', {
+    headers: {
+        'Authorization': `Bearer ${token}`
+    }
+});
+
+const profile = await response.json();
+                    </div>
+                </div>
+
+                <div style="margin: 2rem 0;">
+                    <h4>cURL примеры</h4>
+                    
+                    <h5>Регистрация:</h5>
+                    <div class="code-block">
+curl -X POST https://your-service.onrender.com/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password123","name":"User"}'
+                    </div>
+
+                    <h5>Вход:</h5>
+                    <div class="code-block">
+curl -X POST https://your-service.onrender.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password123"}'
+                    </div>
+
+                    <h5>Получение профиля:</h5>
+                    <div class="code-block">
+curl -X GET https://your-service.onrender.com/api/profile \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Примеры кода -->
+        <div id="examples" class="tab-content">
+            <div class="card">
+                <h3>Примеры интеграции</h3>
+
+                <div style="margin: 2rem 0;">
+                    <h4>React компонент</h4>
+                    <div class="code-block">
+import React, { useState, useEffect } from 'react';
+
+function AuthComponent() {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Проверяем аутентификацию при загрузке
+        if (window.berestaID) {
+            window.berestaID.init().then(user => {
+                setUser(user);
+                setLoading(false);
+            });
+        }
+    }, []);
+
+    const handleLogin = async (email, password) => {
+        try {
+            const result = await window.berestaID.login(email, password);
+            setUser(result.user);
+        } catch (error) {
+            alert('Ошибка входа: ' + error.message);
+        }
+    };
+
+    const handleLogout = async () => {
+        await window.brestID.logout();
+        setUser(null);
+    };
+
+    if (loading) return &lt;div&gt;Загрузка...&lt;/div&gt;;
+
+    return (
+        &lt;div&gt;
+            {user ? (
+                &lt;div&gt;
+                    &lt;p&gt;Привет, {user.name || user.email}!&lt;/p&gt;
+                    &lt;button onClick={handleLogout}&gt;Выйти&lt;/button&gt;
+                &lt;/div&gt;
+            ) : (
+                &lt;LoginForm onLogin={handleLogin} /&gt;
+            )}
+        &lt;/div&gt;
+    );
+}
+                    </div>
+                </div>
+
+                <div style="margin: 2rem 0;">
+                    <h4>Vue.js компонент</h4>
+                    <div class="code-block">
+&lt;template&gt;
+  &lt;div&gt;
+    &lt;div v-if="loading"&gt;Загрузка...&lt;/div&gt;
+    &lt;div v-else&gt;
+      &lt;div v-if="user"&gt;
+        &lt;p&gt;Привет, {{ user.name || user.email }}!&lt;/p&gt;
+        &lt;button @click="logout"&gt;Выйти&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;LoginForm v-else @login="login" /&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data() {
+    return {
+      user: null,
+      loading: true
+    };
+  },
+  async mounted() {
+    if (window.berestaID) {
+      const user = await window.berestaID.init();
+      this.user = user;
+      this.loading = false;
+    }
+  },
+  methods: {
+    async login(email, password) {
+      try {
+        const result = await window.berestaID.login(email, password);
+        this.user = result.user;
+      } catch (error) {
+        alert('Ошибка входа: ' + error.message);
+      }
+    },
+    async logout() {
+      await window.berestaID.logout();
+      this.user = null;
+    }
+  }
+};
+&lt;/script&gt;
+                    </div>
+                </div>
+
+                <div style="margin: 2rem 0;">
+                    <h4>Простая HTML страница</h4>
+                    <div class="code-block">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Мое приложение&lt;/title&gt;
+    &lt;script src="https://your-service.onrender.com/client.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id="app"&gt;
+        &lt;div id="auth-section"&gt;
+            &lt;!-- Контент обновляется автоматически --&gt;
+        &lt;/div&gt;
+        &lt;div id="content"&gt;
+            &lt;!-- Защищенный контент --&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;script&gt;
+        function updateUI() {
+            const authSection = document.getElementById('auth-section');
+            const content = document.getElementById('content');
+
+            if (window.brestID.isAuthenticated()) {
+                const user = window.brestID.getUser();
+                authSection.innerHTML = `
+                    &lt;p&gt;Привет, ${user.name || user.email}!&lt;/p&gt;
+                    &lt;button onclick="logout()"&gt;Выйти&lt;/button&gt;
+                `;
+                content.innerHTML = `&lt;h1&gt;Защищенный контент&lt;/h1&gt;`;
+            } else {
+                authSection.innerHTML = `
+                    &lt;input type="email" id="email" placeholder="Email"&gt;
+                    &lt;input type="password" id="password" placeholder="Пароль"&gt;
+                    &lt;button onclick="login()"&gt;Войти&lt;/button&gt;
+                `;
+                content.innerHTML = `&lt;p&gt;Пожалуйста, войдите в систему&lt;/p&gt;`;
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                await window.brestID.login(email, password);
+                updateUI();
+            } catch (error) {
+                alert('Ошибка входа: ' + error.message);
+            }
+        }
+
+        async function logout() {
+            await window.brestID.logout();
+            updateUI();
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            window.berestaID.init().then(() => {
+                updateUI();
+            });
+        });
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Табы
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Убираем активный класс у всех табов и контента
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Добавляем активный класс текущему табу и контенту
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Автоматическое определение URL
+        document.getElementById('client-url').textContent = window.location.origin + '/client.js';
+
+        // Загрузка клиентской библиотеки
+        function loadClientLibrary() {
+            const script = document.createElement('script');
+            script.src = '/client.js';
+            script.onload = () => {
+                document.getElementById('client-status').innerHTML = 
+                    '<div class="alert alert-success">Клиентская библиотека успешно загружена!</div>';
+                initDemo();
+            };
+            script.onerror = () => {
+                document.getElementById('client-status').innerHTML = 
+                    '<div class="alert alert-error">Ошибка загрузки клиентской библиотеки</div>';
+            };
+            document.head.appendChild(script);
+        }
+
+        // Инициализация демо
+        function initDemo() {
+            const client = window.brestID;
+            
+            // Форма регистрации
+            document.getElementById('register-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('reg-email').value;
+                const password = document.getElementById('reg-password').value;
+                const name = document.getElementById('reg-name').value;
+
+                try {
+                    const result = await client.register(email, password, name || null);
+                    document.getElementById('register-result').innerHTML = 
+                        `<div class="alert alert-success">Успешно! Пользователь создан: ${result.user.email}</div>`;
+                } catch (error) {
+                    document.getElementById('register-result').innerHTML = 
+                        `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
+                }
+            });
+
+            // Форма входа
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+
+                try {
+                    const result = await client.login(email, password);
+                    document.getElementById('login-result').innerHTML = 
+                        `<div class="alert alert-success">Успешный вход! Добро пожаловать, ${result.user.email}</div>`;
+                    updateStatus();
+                    enableProfileButtons();
+                } catch (error) {
+                    document.getElementById('login-result').innerHTML = 
+                        `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
+                }
+            });
+
+            // Кнопки управления профилем
+            document.getElementById('get-profile').addEventListener('click', async () => {
+                try {
+                    const profile = await client.getProfile();
+                    document.getElementById('profile-result').innerHTML = 
+                        `<div class="alert alert-success">Профиль: ${JSON.stringify(profile, null, 2)}</div>`;
+                } catch (error) {
+                    document.getElementById('profile-result').innerHTML = 
+                        `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
+                }
+            });
+
+            document.getElementById('update-profile').addEventListener('click', async () => {
+                const newName = prompt('Введите новое имя:');
+                if (newName) {
+                    try {
+                        const result = await client.updateProfile(newName);
+                        document.getElementById('profile-result').innerHTML = 
+                            `<div class="alert alert-success">Профиль обновлен: ${JSON.stringify(result, null, 2)}</div>`;
+                        updateStatus();
+                    } catch (error) {
+                        document.getElementById('profile-result').innerHTML = 
+                            `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
+                    }
+                }
+            });
+
+            document.getElementById('verify-token').addEventListener('click', async () => {
+                try {
+                    const verified = await client.verifyToken();
+                    document.getElementById('profile-result').innerHTML = 
+                        `<div class="alert alert-success">Токен действителен: ${JSON.stringify(verified, null, 2)}</div>`;
+                } catch (error) {
+                    document.getElementById('profile-result').innerHTML = 
+                        `<div class="alert alert-error">Ошибка: ${error.message}</div>`;
+                }
+            });
+
+            document.getElementById('logout').addEventListener('click', async () => {
+                await client.logout();
+                document.getElementById('profile-result').innerHTML = 
+                    `<div class="alert alert-success">Вы вышли из системы</div>`;
+                updateStatus();
+                disableProfileButtons();
+            });
+
+            // Обновление статуса
+            function updateStatus() {
+                const isAuth = client.isAuthenticated();
+                const user = client.getUser();
+                
+                document.getElementById('auth-status').textContent = isAuth ? 'Аутентифицирован' : 'Не аутентифицирован';
+                document.getElementById('user-info').textContent = user ? user.email : 'Неизвестен';
+                document.getElementById('token-info').textContent = client.getToken() ? 'Присутствует' : 'Отсутствует';
+            }
+
+            function enableProfileButtons() {
+                document.getElementById('get-profile').disabled = false;
+                document.getElementById('update-profile').disabled = false;
+                document.getElementById('verify-token').disabled = false;
+                document.getElementById('logout').disabled = false;
+            }
+
+            function disableProfileButtons() {
+                document.getElementById('get-profile').disabled = true;
+                document.getElementById('update-profile').disabled = true;
+                document.getElementById('verify-token').disabled = true;
+                document.getElementById('logout').disabled = true;
+            }
+
+            // Инициализация статуса
+            client.init().then(() => {
+                updateStatus();
+                if (client.isAuthenticated()) {
+                    enableProfileButtons();
+                }
+            });
+        }
+
+        // Загружаем клиентскую библиотеку при загрузке страницы
+        loadClientLibrary();
+    </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Документация - Beresta ID</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav container">
+            <a href="/" class="logo">Beresta ID</a>
+            <ul class="nav-links">
+                <li><a href="/">Главная</a></li>
+                <li><a href="/demo">Демо</a></li>
+                <li><a href="/docs" style="color: var(--primary);">Документация</a></li>
+                <li><a href="/admin">Админ-панель</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container" style="padding: 2rem 0;">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Документация Beresta ID</h1>
+        
+        <div class="card">
+            <h2>🚀 Быстрый старт</h2>
+            
+            <h3>1. Подключение клиентской библиотеки</h3>
+            <div class="code-block">
+&lt;script src="https://your-service.onrender.com/client.js"&gt;&lt;/script&gt;
+            </div>
+
+            <h3>2. Базовая настройка</h3>
+            <div class="code-block">
+// После подключения скрипта доступен глобальный объект berestaID
+// Автоматическая инициализация при загрузке страницы
+
+// Проверка статуса аутентификации
+if (window.brestID.isAuthenticated()) {
+    const user = window.brestID.getUser();
+    console.log('Пользователь:', user);
+} else {
+    console.log('Пользователь не аутентифицирован');
+}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📚 API Reference</h2>
+
+            <h3>Методы клиентской библиотеки</h3>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>register(email, password, name?)</h4>
+                <p>Регистрация нового пользователя</p>
+                <div class="code-block">
+const result = await brestID.register('user@example.com', 'password123', 'User Name');
+// result: { user: { id, email, name }, message: '...' }
+                </div>
+            </div>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>login(email, password)</h4>
+                <p>Вход в систему</p>
+                <div class="code-block">
+const result = await brestID.login('user@example.com', 'password123');
+// result: { token, user: { id, email, name }, expiresAt }
+                </div>
+            </div>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>logout()</h4>
+                <p>Выход из системы</p>
+                <div class="code-block">
+await berestaID.logout();
+                </div>
+            </div>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>verifyToken()</h4>
+                <p>Проверка валидности токена</p>
+                <div class="code-block">
+const verified = await berestaID.verifyToken();
+// verified: { valid: true, user: { ... } } или null
+                </div>
+            </div>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>getProfile()</h4>
+                <p>Получение профиля пользователя</p>
+                <div class="code-block">
+const profile = await berestaID.getProfile();
+// profile: { user: { id, email, name } }
+                </div>
+            </div>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>updateProfile(name)</h4>
+                <p>Обновление имени пользователя</p>
+                <div class="code-block">
+const result = await berestaID.updateProfile('New Name');
+// result: { user: { id, email, name }, message: '...' }
+                </div>
+            </div>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>isAuthenticated()</h4>
+                <p>Проверка аутентификации</p>
+                <div class="code-block">
+const isAuth = berestaID.isAuthenticated();
+// isAuth: true или false
+                </div>
+            </div>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>getUser()</h4>
+                <p>Получение данных пользователя</p>
+                <div class="code-block">
+const user = berestaID.getUser();
+// user: { id, email, name } или null
+                </div>
+            </div>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>getToken()</h4>
+                <p>Получение JWT токена</p>
+                <div class="code-block">
+const token = berestaID.getToken();
+// token: строка или null
+                </div>
+            </div>
+
+            <div style="margin: 1.5rem 0;">
+                <h4>init()</h4>
+                <p>Инициализация и проверка токена при загрузке</p>
+                <div class="code-block">
+const user = await berestaID.init();
+// user: данные пользователя или null
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔧 Прямое использование API</h2>
+
+            <h3>Базовый URL</h3>
+            <div class="code-block">
+const BASE_URL = 'https://your-service.onrender.com';
+            </div>
+
+            <h3>Эндпоинты</h3>
+
+            <table style="width: 100%; margin: 1rem 0;">
+                <thead>
+                    <tr>
+                        <th>Метод</th>
+                        <th>URL</th>
+                        <th>Описание</th>
+                        <th>Тело запроса</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>POST</code></td>
+                        <td><code>/auth/register</code></td>
+                        <td>Регистрация пользователя</td>
+                        <td><code>{ email, password, name? }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>POST</code></td>
+                        <td><code>/auth/login</code></td>
+                        <td>Вход в систему</td>
+                        <td><code>{ email, password }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>POST</code></td>
+                        <td><code>/auth/logout</code></td>
+                        <td>Выход из системы</td>
+                        <td><code>Authorization: Bearer token</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>GET</code></td>
+                        <td><code>/auth/verify</code></td>
+                        <td>Проверка токена</td>
+                        <td><code>Authorization: Bearer token</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>GET</code></td>
+                        <td><code>/api/profile</code></td>
+                        <td>Получение профиля</td>
+                        <td><code>Authorization: Bearer token</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>PUT</code></td>
+                        <td><code>/api/profile</code></td>
+                        <td>Обновление профиля</td>
+                        <td><code>{ name }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>GET</code></td>
+                        <td><code>/admin/stats</code></td>
+                        <td>Статистика (админ)</td>
+                        <td><code>Authorization: Bearer token</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>🛡️ Безопасность</h2>
+
+            <h3>JWT Токены</h3>
+            <ul style="margin: 1rem 0; padding-left: 2rem;">
+                <li>Токены действительны 7 дней</li>
+                <li>Автоматическое обновление при каждом запросе</li>
+                <li>Хранятся в localStorage</li>
+                <li>Подпись с использованием секретного ключа</li>
+            </ul>
+
+            <h3>Защита паролей</h3>
+            <ul style="margin: 1rem 0; padding-left: 2rem;">
+                <li>Пароли хешируются с помощью bcrypt</li>
+                <li>Минимальная длина пароля: 6 символов</li>
+                <li>Защита от brute-force атак</li>
+            </ul>
+
+            <h3>CORS</h3>
+            <ul style="margin: 1rem 0; padding-left: 2rem;">
+                <li>Настройка разрешенных доменов через ALLOWED_ORIGINS</li>
+                <li>Поддержка credentials</li>
+                <li>Защита от CSRF атак</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>⚙️ Настройка окружения</h2>
+
+            <h3>Переменные окружения</h3>
+            <table style="width: 100%; margin: 1rem 0;">
+                <thead>
+                    <tr>
+                        <th>Переменная</th>
+                        <th>Обязательная</th>
+                        <th>Описание</th>
+                        <th>Пример</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>JWT_SECRET</code></td>
+                        <td>✅ Да</td>
+                        <td>Секретный ключ для JWT</td>
+                        <td><code>super-secret-key</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>DATABASE_URL</code></td>
+                        <td>✅ Да</td>
+                        <td>URL подключения к PostgreSQL</td>
+                        <td><code>postgresql://user:pass@host/db</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>ALLOWED_ORIGINS</code></td>
+                        <td>❌ Нет</td>
+                        <td>Разрешенные домены (через запятую)</td>
+                        <td><code>https://app1.com,https://app2.com</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>NODE_ENV</code></td>
+                        <td>❌ Нет</td>
+                        <td>Окружение выполнения</td>
+                        <td><code>production</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Пример .env файла</h3>
+            <div class="code-block">
+JWT_SECRET=your-super-secret-jwt-key
+DATABASE_URL=postgresql://user:pass@localhost:5432/brestid
+ALLOWED_ORIGINS=http://localhost:3000,https://yourapp.com
+NODE_ENV=development
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🚨 Обработка ошибок</h2>
+
+            <h3>Коды ответов</h3>
+            <table style="width: 100%; margin: 1rem 0;">
+                <thead>
+                    <tr>
+                        <th>Код</th>
+                        <th>Описание</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>200</code></td>
+                        <td>Успешный запрос</td>
+                    </tr>
+                    <tr>
+                        <td><code>201</code></td>
+                        <td>Ресурс создан</td>
+                    </tr>
+                    <tr>
+                        <td><code>400</code></td>
+                        <td>Неверный запрос</td>
+                    </tr>
+                    <tr>
+                        <td><code>401</code></td>
+                        <td>Не авторизован</td>
+                    </tr>
+                    <tr>
+                        <td><code>403</code></td>
+                        <td>Доступ запрещен</td>
+                    </tr>
+                    <tr>
+                        <td><code>404</code></td>
+                        <td>Ресурс не найден</td>
+                    </tr>
+                    <tr>
+                        <td><code>429</code></td>
+                        <td>Слишком много запросов</td>
+                    </tr>
+                    <tr>
+                        <td><code>500</code></td>
+                        <td>Внутренняя ошибка сервера</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Формат ошибок</h3>
+            <div class="code-block">
+{
+    "error": "Описание ошибки",
+    "success": false
+}
+            </div>
+
+            <h3>Примеры ошибок</h3>
+            <div class="code-block">
+// Неверные учетные данные
+{
+    "error": "Неверные учетные данные",
+    "success": false
+}
+
+// Пользователь уже существует
+{
+    "error": "Пользователь с таким email уже существует",
+    "success": false
+}
+
+// Недействительный токен
+{
+    "error": "Недействительный или просроченный токен",
+    "success": false
+}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📞 Поддержка</h2>
+
+            <h3>Полезные ссылки</h3>
+            <ul style="margin: 1rem 0; padding-left: 2rem;">
+                <li><a href="/demo">Интерактивная демо-страница</a></li>
+                <li><a href="/admin">Админ-панель</a></li>
+                <li><a href="/health">Проверка здоровья сервиса</a></li>
+                <li><a href="/client.js">Клиентская библиотека</a></li>
+            </ul>
+
+            <h3>Логирование</h3>
+            <p>Сервис автоматически логирует все запросы и ошибки. Логи доступны через панель управления Render.</p>
+
+            <h3>Мониторинг</h3>
+            <p>Используйте эндпоинт <code>/health</code> для проверки статуса сервиса и подключения к базе данных.</p>
+        </div>
+    </main>
+
+    <footer style="background: var(--card); padding: 2rem 0; margin-top: 4rem; border-top: 1px solid var(--border);">
+        <div class="container" style="text-align: center; color: var(--text-light);">
+            <p>Beresta ID Service &copy; 2024. Полная документация по использованию сервиса аутентификации.</p>
+        </div>
+    </footer>
+</body>
+</html>    

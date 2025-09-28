@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель - Beresta ID</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav container">
+            <a href="/" class="logo">Beresta ID</a>
+            <ul class="nav-links">
+                <li><a href="/">Главная</a></li>
+                <li><a href="/demo">Демо</a></li>
+                <li><a href="/docs">Документация</a></li>
+                <li><a href="/admin" style="color: var(--primary);">Админ-панель</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container dashboard">
+        <h1 style="margin-bottom: 2rem;">Админ-панель Brest ID</h1>
+        
+        <div id="login-section" class="form-container">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Вход в админ-панель</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="admin-email">Email</label>
+                    <input type="email" id="admin-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Пароль</label>
+                    <input type="password" id="admin-password" required>
+                </div>
+                <button type="submit" class="btn">Войти</button>
+            </form>
+            <div id="login-message" style="margin-top: 1rem;"></div>
+        </div>
+
+        <div id="admin-panel" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number" id="users-count">0</span>
+                    <span class="stat-label">Всего пользователей</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="sessions-count">0</span>
+                    <span class="stat-label">Активных сессий</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="service-status">OK</span>
+                    <span class="stat-label">Статус сервиса</span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3 style="padding: 1rem; margin: 0;">Последние пользователи</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Имя</th>
+                            <th>Дата регистрации</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table">
+                        <tr>
+                            <td colspan="3" style="text-align: center;">Загрузка...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 2rem; text-align: center;">
+                <button id="refresh-btn" class="btn">Обновить данные</button>
+                <button id="logout-btn" class="btn btn-secondary" style="margin-left: 1rem;">Выйти</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        class AdminPanel {
+            constructor() {
+                this.token = localStorage.getItem('admin_token');
+                this.init();
+            }
+
+            init() {
+                if (this.token) {
+                    this.verifyToken();
+                } else {
+                    this.showLogin();
+                }
+
+                document.getElementById('login-form').addEventListener('submit', (e) => this.login(e));
+                document.getElementById('refresh-btn').addEventListener('click', () => this.loadStats());
+                document.getElementById('logout-btn').addEventListener('click', () => this.logout());
+            }
+
+            async login(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('admin-email').value;
+                const password = document.getElementById('admin-password').value;
+                const messageEl = document.getElementById('login-message');
+
+                try {
+                    const response = await fetch('/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        this.token = data.token;
+                        localStorage.setItem('admin_token', data.token);
+                        this.showAdminPanel();
+                        this.loadStats();
+                    } else {
+                        messageEl.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+                    }
+                } catch (error) {
+                    messageEl.innerHTML = `<div class="alert alert-error">Ошибка подключения</div>`;
+                }
+            }
+
+            async verifyToken() {
+                try {
+                    const response = await fetch('/auth/verify', {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+
+                    if (response.ok) {
+                        this.showAdminPanel();
+                        this.loadStats();
+                    } else {
+                        this.showLogin();
+                    }
+                } catch (error) {
+                    this.showLogin();
+                }
+            }
+
+            async loadStats() {
+                try {
+                    const response = await fetch('/admin/stats', {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+
+                    if (response.ok) {
+                        const stats = await response.json();
+                        this.updateStats(stats);
+                    } else {
+                        throw new Error('Failed to load stats');
+                    }
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+
+            updateStats(stats) {
+                document.getElementById('users-count').textContent = stats.users;
+                document.getElementById('sessions-count').textContent = stats.activeSessions;
+
+                const usersTable = document.getElementById('users-table');
+                usersTable.innerHTML = '';
+
+                if (stats.recentUsers.length === 0) {
+                    usersTable.innerHTML = '<tr><td colspan="3" style="text-align: center;">Нет пользователей</td></tr>';
+                } else {
+                    stats.recentUsers.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${user.email}</td>
+                            <td>${user.name || '-'}</td>
+                            <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                        `;
+                        usersTable.appendChild(row);
+                    });
+                }
+            }
+
+            showAdminPanel() {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+            }
+
+            showLogin() {
+                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('admin-panel').style.display = 'none';
+                localStorage.removeItem('admin_token');
+                this.token = null;
+            }
+
+            async logout() {
+                try {
+                    await fetch('/auth/logout', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                } catch (error) {
+                    console.error('Logout error:', error);
+                } finally {
+                    this.showLogin();
+                }
+            }
+        }
+
+        // Инициализация админ-панели
+        new AdminPanel();
+    </script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beresta ID - Сервис аутентификации</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav container">
+            <a href="/" class="logo">Beresta ID</a>
+            <ul class="nav-links">
+                <li><a href="/">Главная</a></li>
+                <li><a href="/demo">Демо</a></li>
+                <li><a href="/docs">Документация</a></li>
+                <li><a href="/admin">Админ-панель</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Beresta ID Service</h1>
+            <p>Мощный сервис аутентификации для ваших приложений</p>
+            <a href="/demo" class="cta-button">Начать использование</a>
+        </div>
+    </section>
+
+    <section class="features container">
+        <h2 style="text-align: center; margin-bottom: 3rem;">Возможности сервиса</h2>
+        <div class="features-grid">
+            <div class="card">
+                <h3>🔐 Безопасная аутентификация</h3>
+                <p>JWT токены, хеширование паролей, защита от bruteforce атак</p>
+            </div>
+            <div class="card">
+                <h3>🌐 CORS поддержка</h3>
+                <p>Используйте сервис из любых доменов и приложений</p>
+            </div>
+            <div class="card">
+                <h3>📊 Админ-панель</h3>
+                <p>Мониторинг пользователей и статистика в реальном времени</p>
+            </div>
+            <div class="card">
+                <h3>🔧 Простая интеграция</h3>
+                <p>Подключите одним скриптом и начинайте работу</p>
+            </div>
+            <div class="card">
+                <h3>🚀 Готов к продакшену</h3>
+                <p>Оптимизирован для развертывания на Render.com</p>
+            </div>
+            <div class="card">
+                <h3>📚 Документация</h3>
+                <p>Полное руководство по интеграции и использованию</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="container" style="padding: 4rem 0; text-align: center;">
+        <h2 style="margin-bottom: 1rem;">Быстрый старт</h2>
+        <p style="margin-bottom: 2rem; color: var(--text-light);">Подключите сервис к вашему приложению за 2 минуты</p>
+        <div class="code-block" style="max-width: 600px; margin: 0 auto;">
+            &lt;script src="<span id="service-url">/client.js</span>"&gt;&lt;/script&gt;
+        </div>
+    </section>
+
+    <footer style="background: var(--card); padding: 2rem 0; margin-top: 4rem; border-top: 1px solid var(--border);">
+        <div class="container" style="text-align: center; color: var(--text-light);">
+            <p>Beresta ID Service &copy; 2025. Сервис аутентификации для современных приложений.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Автоматически определяем URL сервиса для демо
+        document.getElementById('service-url').textContent = window.location.origin + '/client.js';
+    </script>
+</body>
+</html>
